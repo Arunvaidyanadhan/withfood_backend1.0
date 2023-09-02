@@ -1,0 +1,7 @@
+Express — Express is a minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
+Express-validator — Express Validator is a set of Express. js middleware that wraps validator. js , a library that provides validator and sanitizer functions. Simply said, Express Validator is an Express middleware library that you can incorporate in your apps for server-side data validation.
+MySQL — MySQL an open-source relational database management system (RDBMS).
+body-parser — Express body-parser is an npm library used to process data sent through an HTTP request body. It exposes four express middlewares for parsing text, JSON, url-encoded and raw data set through an HTTP request body. 
+jsonwebtoken — This module provides Express middleware for validating JWTs (JSON Web Tokens) through the jsonwebtoken module. The decoded JWT payload is available on the request object.
+bcryptjs — The bcrypt hashing function allows us to build a password security platform that scales with computation power and always hashes every password with a salt.
+cors — CORS is a node.js package for providing a Connect/Express middleware that can be used to enable CORS with various options.
