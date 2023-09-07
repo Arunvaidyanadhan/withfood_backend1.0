@@ -1,5 +1,4 @@
 var express = require('express');
-const ejsLayouts = require('express-ejs-layouts')
 
 const { config } = require('dotenv');
 var app = express();
@@ -8,13 +7,13 @@ var mysql = require('mysql');
 const cors = require('cors');
 const multer = require('multer') // image handling module
 const path = require('path')
+busboy = require("then-busboy"),
 
-
-// handle form data
+    //use express static folder
+    app.use(cors());
+app.use(express.static("./public"))
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 config();
 // cors error fix
@@ -27,24 +26,22 @@ var options = {
 
 app.use(cors(options));
 
-// configure templating engine for image
-app.set('view engine', 'ejs')
-app.use(ejsLayouts)
 
-// make public directory's files static
-app.use(express.static('uploads'))
 
-// Configure multer
-const storageEngine = multer.diskStorage({
-    destination: (req, file, callback) => {
-        callback(null, path.join(__dirname, 'upload'))
+//! Use of Multer
+var storage = multer.diskStorage({
+    destination: (req, file, callBack) => {
+        callBack(null, './public/images/')     // './public/images/' directory name where save the file
     },
-    filename: (req, file, callback) => {
-        callback(null, file.originalname)
+    filename: (req, file, callBack) => {
+        callBack(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
     }
 })
 
-const upload = multer({ storage: storageEngine })
+var upload = multer({
+    storage: storage, limits: { fieldSize: 24 * 3456 * 3456 }
+});
+
 
 // env file variables
 const PORT = process.env.PORT;
@@ -86,13 +83,13 @@ app.post('/recipe', upload.single('image'), function (req, res) {
 
     let RecipeName = req.body.RecipeName;
     let Steps_Tips = req.body.Steps_Tips;
-    let Likes = 'test';
+    let Likes = '86';
     let Duration = req.body.Duration;
     let RecipeType = req.body.RecipeType;
     let Course = req.body.Course;
     let Cousine = req.body.Cousine;
     let Tips = req.body.Tips;
-    let ImagePath = req.body.ImagePath;
+    let ImagePath = req.file;
 
     //let file = req.body.req.file;
     if (!RecipeName) {
@@ -101,12 +98,26 @@ app.post('/recipe', upload.single('image'), function (req, res) {
 
     dbConn.query("INSERT INTO recipes SET ? ", {
         RecipeName: RecipeName, Steps_Tips: Steps_Tips,
-        Likes: Likes, Duration: Duration, RecipeType: RecipeType, Course: Course, Cousine: Cousine, Tips: Tips
-        , ImagePath: ImagePath
+        Likes: Likes, Duration: Duration, RecipeType: RecipeType, Course: Course, Cousine: Cousine, Tips: Tips,
+        ImagePath: ImagePath
+
     }, function (error, results, fields) {
         if (error) throw error;
         return res.send({ error: false, data: results, message: 'Recipe has been created successfully.' });
     });
+});
+
+app.put("/uploadimageById", upload.single('file'), (req, res) => {
+    let Recipe_Id = req.query.Recipe_Id
+    if (!req.file) {
+        console.log("No file upload");
+    } else {
+        var imgsrc = 'http://localhost:8000/images/' + req.file.filename
+        dbConn.query("UPDATE recipes SET ImagePath = ? WHERE RecipeId = ?", [imgsrc, Recipe_Id], function (error, results, fields) {
+            if (error) throw error;
+            return res.send({ error: false, data: results, message: 'image has been updated successfully.' });
+        });
+    }
 });
 
 
@@ -210,9 +221,49 @@ app.post('/Subincredients', function (req, res) {
     });
 });
 
+// Retrieve ingredient by recipe_id
+app.get('/ingredientsByRecipeId', function (req, res) {
+    let Recipe_Id = req.query.Recipe_Id
+    dbConn.query('SELECT * FROM ingredients WHERE RecipeId = ?', [Recipe_Id], function (error, results, fields) {
+        if (error) throw error;
+        return res.send({ error: false, data: results, message: 'Ingredient for recipe' });
+    });
+});
+
+// Retrieve swappable ingredient by recipe_id
+app.get('/swappablesByRecipeId', function (req, res) {
+    let Recipe_Id = req.query.Recipe_Id
+
+    dbConn.query('SELECT * FROM swappable_ingredients WHERE RecipeId = ?', [Recipe_Id], function (error, results, fields) {
+        if (error) throw error;
+        return res.send({ error: false, data: results, message: 'Swappables for recipe' });
+    });
+});
+
+// Retrieve recipes by recipe_id
+app.get('/recipeById', function (req, res) {
+    let Recipe_Id = req.query.Recipe_Id
+
+    dbConn.query('SELECT * FROM recipes WHERE RecipeId = ?', [Recipe_Id], function (error, results, fields) {
+        if (error) throw error;
+        return res.send({ error: false, data: results, message: 'recipes' });
+    });
+});
+
+// Retrieve recipes by recipe_name
+app.get('/recipeByName', function (req, res) {
+    let Recipe_Name = req.query.Recipe_Name
+
+    dbConn.query('SELECT * FROM recipes WHERE RecipeName = ?', [Recipe_Name], function (error, results, fields) {
+        if (error) throw error;
+        return res.send({ error: false, data: results, message: 'recipes' });
+    });
+});
+
 // set port
 app.listen(PORT, function () {
     console.log('Node app is running on port', PORT);
 });
+
 
 module.exports = app;
