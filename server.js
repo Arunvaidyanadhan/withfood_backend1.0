@@ -260,6 +260,16 @@ app.get('/recipeByName', function (req, res) {
     });
 });
 
+// Retrieve recipes by ingredient name
+app.get('/ingredientBySearch', function (req, res) {
+
+    var keyword = (req.query.ingredient_name + '%')
+
+    dbConn.query('SELECT distinct recipes.RecipeId,recipes.ImagePath,recipes.RecipeName FROM recipes INNER JOIN ingredients ON recipes.RecipeId = ingredients.RecipeId WHERE ingredients.IncredientsName  LIKE ?', [keyword], function (error, results, fields) {
+        if (error) throw error;
+        return res.send({ error: false, data: results, message: 'ingbycon' });
+    });
+});
 // set port
 app.listen(PORT, function () {
     console.log('Node app is running on port', PORT);
